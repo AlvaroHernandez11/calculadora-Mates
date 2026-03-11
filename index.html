@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MathStep — Resolvedor Paso a Paso</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@300;400;500&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.2/math.min.js"></script>
+<style>
+:root{--bg:#0d0f14;--surface:#13161e;--surface2:#1a1e29;--border:#252a38;--accent:#f0c040;--accent2:#e07840;--text:#e8e4d8;--dim:#8a8a99;--green:#48c78e;--chalk:#f5f0e8;--red:#e05050}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Lato',sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(240,192,64,.03)1px,transparent 1px),linear-gradient(90deg,rgba(240,192,64,.03)1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.w{position:relative;z-index:1;max-width:880px;margin:0 auto;padding:40px 22px 80px}
+header{text-align:center;margin-bottom:44px;animation:fdown .7s ease both}
+.ll{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:6px}
+.ls{font-family:'Playfair Display',serif;font-size:2.6rem;color:var(--accent);line-height:1;text-shadow:0 0 28px rgba(240,192,64,.4)}
+h1{font-family:'Playfair Display',serif;font-size:2.6rem;font-weight:700;letter-spacing:-.02em;color:var(--chalk)}
+.sub{color:var(--dim);font-size:.88rem;letter-spacing:.08em;text-transform:uppercase;font-weight:300}
+.al{width:56px;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));margin:14px auto;border-radius:2px}
+.badge{display:inline-block;background:rgba(72,199,142,.1);border:1px solid rgba(72,199,142,.22);color:var(--green);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;padding:3px 10px;border-radius:20px;margin-top:8px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:30px;margin-bottom:22px;animation:fup .6s ease both}
+.ops{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:26px}
+.ob{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:13px 10px;cursor:pointer;color:var(--dim);font-family:'Lato',sans-serif;font-size:.8rem;letter-spacing:.05em;text-transform:uppercase;transition:all .2s;text-align:center}
+.ob:hover{border-color:var(--accent);color:var(--accent)}
+.ob.on{background:rgba(240,192,64,.1);border-color:var(--accent);color:var(--accent);box-shadow:0 0 14px rgba(240,192,64,.13)}
+.ob .oi{display:block;font-family:'Playfair Display',serif;font-size:1.5rem;margin-bottom:4px}
+.xo{display:none;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:18px}
+.xo.on{display:grid}
+.fl{font-size:.73rem;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-bottom:5px}
+.fi{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 13px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.88rem;outline:none;transition:border-color .2s}
+.fi:focus{border-color:var(--accent)}
+.il{font-size:.73rem;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-bottom:7px}
+.mi{width:100%;background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:15px 18px;color:var(--chalk);font-family:'JetBrains Mono',monospace;font-size:1.12rem;outline:none;transition:border-color .25s,box-shadow .25s;letter-spacing:.02em;margin-bottom:15px}
+.mi:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(240,192,64,.07)}
+.mi::placeholder{color:var(--dim);font-weight:300}
+.hint{background:rgba(240,192,64,.04);border:1px solid rgba(240,192,64,.1);border-radius:8px;padding:11px 15px;font-size:.81rem;color:var(--dim);margin-bottom:18px;line-height:1.7}
+.hint strong{color:var(--accent)}
+.hint code{font-family:'JetBrains Mono',monospace;background:rgba(240,192,64,.09);color:var(--accent);padding:1px 5px;border-radius:3px;font-size:.86em}
+.sbtn{width:100%;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:12px;padding:15px;color:#0d0f14;font-family:'Lato',sans-serif;font-weight:700;font-size:.96rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .2s}
+.sbtn:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(240,192,64,.28)}
+.sbtn:active{transform:translateY(0)}
+.sbtn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+/* Result */
+.rc{display:none;background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:22px;animation:fup .4s ease}
+.rc.on{display:block}
+.rh{background:linear-gradient(135deg,rgba(240,192,64,.11),rgba(224,120,64,.07));border-bottom:1px solid var(--border);padding:17px 26px;display:flex;align-items:center;gap:11px}
+.rhi{font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--accent)}
+.rht{font-family:'Playfair Display',serif;font-size:1.02rem;color:var(--chalk)}
+.rb{padding:26px}
+.step{display:flex;gap:13px;margin-bottom:16px;animation:fin .3s ease both}
+.sn{flex-shrink:0;width:26px;height:26px;background:rgba(240,192,64,.14);color:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.73rem;font-weight:700;margin-top:2px}
+.sc{flex:1}
+.st{color:var(--text);line-height:1.75;font-size:.94rem;margin-bottom:5px}
+.st strong{color:var(--accent)}
+.st em{color:var(--accent2);font-style:normal}
+.sf{background:var(--surface2);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:9px 15px;font-family:'JetBrains Mono',monospace;font-size:.86rem;color:var(--chalk);margin-top:5px;word-break:break-all;white-space:pre-wrap}
+.sf.g{border-left-color:var(--green)}
+.fb{background:linear-gradient(135deg,rgba(72,199,142,.11),rgba(72,199,142,.04));border:1px solid rgba(72,199,142,.28);border-radius:12px;padding:18px 22px;margin-top:22px;text-align:center}
+.fbl{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--green);margin-bottom:7px}
+.fbv{font-family:'JetBrains Mono',monospace;font-size:1.18rem;color:var(--chalk);word-break:break-all}
+.eb{display:none;background:rgba(224,80,80,.09);border:1px solid rgba(224,80,80,.22);border-radius:12px;padding:16px 20px;color:var(--red);margin-bottom:18px;font-size:.89rem;line-height:1.65}
+.eb.on{display:block}
+.stit{font-family:'Playfair Display',serif;font-size:1.02rem;color:var(--accent);border-bottom:1px solid rgba(240,192,64,.13);padding-bottom:7px;margin:0 0 15px}
+/* Examples */
+.exs{animation:fup .8s .2s ease both}
+.ext{font-size:.73rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:11px}
+.exg{display:flex;flex-wrap:wrap;gap:7px}
+.ec{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:6px 13px;font-family:'JetBrains Mono',monospace;font-size:.76rem;color:var(--dim);cursor:pointer;transition:all .2s}
+.ec:hover{border-color:var(--accent);color:var(--accent);background:rgba(240,192,64,.05)}
+@keyframes fdown{from{opacity:0;transform:translateY(-18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fup{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fin{from{opacity:0}to{opacity:1}}
+@media(max-width:580px){h1{font-size:2rem}.card,.rb{padding:18px}}
+</style>
+</head>
+<body>
+<div class="w">
+<header>
+  <div class="ll">
+    <span class="ls">∫</span><h1>MathStep</h1><span class="ls" style="transform:scaleX(-1)">∂</span>
+  </div>
+  <div class="al"></div>
+  <p class="sub">Resolvedor paso a paso · Bachillerato &amp; ESO</p>
+  <div class="badge">✓ 100% local · sin conexión ni API</div>
+</header>
+
+<div class="card">
+  <div class="ops">
+    <button class="ob on" data-op="integral" onclick="selOp('integral',this)"><span class="oi">∫</span>Integral</button>
+    <button class="ob" data-op="derivada" onclick="selOp('derivada',this)"><span class="oi">f'</span>Derivada</button>
+    <button class="ob" data-op="limite" onclick="selOp('limite',this)"><span class="oi">lim</span>Límite</button>
+  </div>
+  <div class="xo on" id="iOpts">
+    <div><div class="fl">Límite inferior (opcional)</div><input class="fi" id="lo" placeholder="ej: 0"></div>
+    <div><div class="fl">Límite superior (opcional)</div><input class="fi" id="hi" placeholder="ej: 1"></div>
+  </div>
+  <div class="xo" id="lOpts">
+    <div><div class="fl">x tiende a</div><input class="fi" id="lpt" placeholder="0, 1, Infinity, -Infinity…"></div>
+    <div><div class="fl">Tipo</div>
+      <select class="fi" id="lty">
+        <option value="b">Bilateral</option>
+        <option value="r">Por la derecha (x→a⁺)</option>
+        <option value="l">Por la izquierda (x→a⁻)</option>
+      </select>
+    </div>
+  </div>
+  <div class="il" id="ilbl">Función a integrar</div>
+  <input class="mi" id="expr" type="text" placeholder="ej: x^2 + 3*x - 5" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')go()">
+  <div class="hint">
+    💡 Notación: <code>x^2</code>=x², <code>sqrt(x)</code>=√x, <code>sin(x)</code> <code>cos(x)</code> <code>tan(x)</code>,
+    <code>ln(x)</code>=log natural, <code>e^x</code>=exponencial, <code>abs(x)</code>=valor absoluto.
+    Siempre usa <code>*</code> para multiplicar: escribe <strong>2*x</strong>, no 2x.
+  </div>
+  <button class="sbtn" id="sbtn" onclick="go()">⟶ Resolver paso a paso</button>
+</div>
+
+<div class="eb" id="err"></div>
+<div class="rc" id="rc">
+  <div class="rh"><span class="rhi">✦</span><span class="rht" id="rtit">Solución</span></div>
+  <div class="rb" id="rb"></div>
+</div>
+
+<div class="exs">
+  <div class="ext">Ejemplos rápidos</div>
+  <div class="exg">
+    <span class="ec" onclick="eg('integral','x^2 + 5*x','','')">∫ x²+5x</span>
+    <span class="ec" onclick="eg('integral','3*x^2 - 2*x + 1','','')">∫ 3x²−2x+1</span>
+    <span class="ec" onclick="eg('integral','sin(x)','','')">∫ sin(x)</span>
+    <span class="ec" onclick="eg('integral','cos(2*x)','','')">∫ cos(2x)</span>
+    <span class="ec" onclick="eg('integral','e^x','','')">∫ eˣ</span>
+    <span class="ec" onclick="eg('integral','1/x','','')">∫ 1/x</span>
+    <span class="ec" onclick="eg('integral','x*e^x','','')">∫ x·eˣ</span>
+    <span class="ec" onclick="eg('integral','x*sin(x)','','')">∫ x·sin(x)</span>
+    <span class="ec" onclick="eg('integral','ln(x)','','')">∫ ln(x)</span>
+    <span class="ec" onclick="eg('integral','sqrt(x)','','')">∫ √x</span>
+    <span class="ec" onclick="eg('integral','1/(x^2+1)','','')">∫ 1/(x²+1)</span>
+    <span class="ec" onclick="eg('integral','x^2','0','3')">∫₀³ x²</span>
+    <span class="ec" onclick="eg('integral','sin(x)','0','3.14159')">∫₀^π sin(x)</span>
+    <span class="ec" onclick="eg('derivada','x^4 - 3*x^2 + 5','','')">d/dx x⁴−3x²+5</span>
+    <span class="ec" onclick="eg('derivada','sin(x)*cos(x)','','')">d/dx sin·cos</span>
+    <span class="ec" onclick="eg('derivada','(x^2+1)/(x-1)','','')">d/dx cociente</span>
+    <span class="ec" onclick="eg('derivada','ln(x^2+1)','','')">d/dx ln(x²+1)</span>
+    <span class="ec" onclick="eg('derivada','e^(x^2)','','')">d/dx e^(x²)</span>
+    <span class="ec" onclick="eg('derivada','sqrt(3*x+1)','','')">d/dx √(3x+1)</span>
+    <span class="ec" onclick="eg('limite','(x^2-1)/(x-1)','1','b')">lim x→1</span>
+    <span class="ec" onclick="eg('limite','sin(x)/x','0','b')">lim x→0 sin/x</span>
+    <span class="ec" onclick="eg('limite','(x^2+3*x)/(2*x^2-1)','Infinity','b')">lim x→∞</span>
+  </div>
+</div>
+</div>
+
+<script>
+/* ── GLOBALS ── */
+let COP = 'integral';
+
+function selOp(op,btn){
+  COP=op;
+  document.querySelectorAll('.ob').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  const L={integral:'Función a integrar',derivada:'Función a derivar',limite:'Función para el límite'};
+  const P={integral:'ej: x^2 + 3*x - 5',derivada:'ej: x^3 - 2*x + 1',limite:'ej: (x^2-1)/(x-1)'};
+  document.getElementById('ilbl').textContent=L[op];
+  document.getElementById('expr').placeholder=P[op];
+  document.getElementById('iOpts').classList.toggle('on',op==='integral');
+  document.getElementById('lOpts').classList.toggle('on',op==='limite');
+  clr();
+}
+function eg(op,ex,lo,hi){
+  selOp(op,document.querySelector(`[data-op="${op}"]`));
+  document.getElementById('expr').value=ex;
+  if(op==='integral'){document.getElementById('lo').value=lo;document.getElementById('hi').value=hi;}
+  if(op==='limite'){document.getElementById('lpt').value=lo||'0';document.getElementById('lty').value=hi||'b';}
+  go();
+}
+function clr(){
+  document.getElementById('rc').classList.remove('on');
+  document.getElementById('err').classList.remove('on');
+}
+function showErr(m){
+  const e=document.getElementById('err');
+  e.innerHTML='⚠️ '+m;
+  e.classList.add('on');
+}
+function md(t){
+  return t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/__(.+?)__/g,'<em>$1</em>');
+}
+function stepsHTML(steps){
+  return steps.map((s,i)=>{
+    const sn=s.sp
+      ?`<div class="sn" style="background:rgba(72,199,142,.14);color:var(--green)">✓</div>`
+      :`<div class="sn">${i+1}</div>`;
+    const fm=s.f?`<div class="sf${s.sp?' g':''}">${s.f}</div>`:'';
+    return `<div class="step">${sn}<div class="sc"><div class="st">${md(s.t)}</div>${fm}</div></div>`;
+  }).join('');
+}
+function finalHTML(r){return `<div class="fb"><div class="fbl">✓ Resultado Final</div><div class="fbv">${r}</div></div>`;}
+function secHTML(t){return `<div class="stit">${t}</div>`;}
+
+/* ══════════════════════════════════════════════════
+   SYMBOLIC INTEGRAL ENGINE (no external dependencies)
+══════════════════════════════════════════════════ */
+class SymInt {
+  constructor(){this.S=[];}
+  add(t,f=null,sp=false){this.S.push({t,f,sp});}
+
+  /* helpers */
+  ns(n){try{return n.toString();}catch(e){return '?';}}
+
+  isConst(n){
+    if(!n) return false;
+    if(n.type==='ConstantNode') return true;
+    if(n.type==='SymbolNode') return n.name!=='x';
+    if(n.type==='OperatorNode') return n.args.every(a=>this.isConst(a));
+    if(n.type==='FunctionNode') return n.args.every(a=>this.isConst(a));
+    return false;
+  }
+
+  cval(n){
+    if(!n) return null;
+    if(n.type==='ConstantNode') return n.value;
+    try{return math.evaluate(n.toString());}catch(e){return null;}
+  }
+
+  fmt(v){
+    if(v===Math.round(v)) return String(Math.round(v));
+    const pairs=[[1,2],[1,3],[2,3],[1,4],[3,4],[1,5],[2,5],[3,5],[4,5],[1,6],[5,6],[1,8],[3,8],[5,8],[7,8],[2,9],[4,9],[5,9],[7,9],[8,9]];
+    for(const[p,q]of pairs){
+      if(Math.abs(v-p/q)<1e-9) return `${p}/${q}`;
+      if(Math.abs(v+p/q)<1e-9) return `-${p}/${q}`;
+    }
+    return String(parseFloat(v.toFixed(8)));
+  }
+
+  /* Check if node is a*x+b. Returns {a,b} or null */
+  linear(n){
+    if(n.type==='SymbolNode'&&n.name==='x') return {a:1,b:0};
+    if(this.isConst(n)){const v=this.cval(n);return v!==null?{a:0,b:v}:null;}
+    if(n.type==='OperatorNode'){
+      const{op,args}=n;
+      if(op==='unaryMinus'){const l=this.linear(args[0]);return l?{a:-l.a,b:-l.b}:null;}
+      if(op==='*'){
+        const[a,b]=args;
+        if(this.isConst(a)&&b.type==='SymbolNode'&&b.name==='x'){const v=this.cval(a);return v!==null?{a:v,b:0}:null;}
+        if(this.isConst(b)&&a.type==='SymbolNode'&&a.name==='x'){const v=this.cval(b);return v!==null?{a:v,b:0}:null;}
+      }
+      if(op==='+'||op==='-'){
+        const la=this.linear(args[0]),lb=this.linear(args[1]);
+        if(la&&lb){const s=op==='+'?1:-1;return{a:la.a+s*lb.a,b:la.b+s*lb.b};}
+      }
+    }
+    return null;
+  }
+
+  /* Main entry */
+  solve(exStr,lo='',hi=''){
+    this.S=[];
+    const def=lo!==''&&hi!=='';
+    this.add(def
+      ?`Calculamos la **integral definida** ∫[${lo}→${hi}] (${exStr}) dx`
+      :`Calculamos la **integral indefinida** ∫ (${exStr}) dx`);
+
+    let node;
+    try{node=math.parse(exStr);}
+    catch(e){throw new Error('Expresión inválida. Revisa la sintaxis (usa * para multiplicar).');}
+
+    const prim=this.int(node);
+    let primSimp=prim;
+    try{primSimp=math.simplify(prim,{},{exactFractions:false}).toString();}catch(e){}
+
+    if(!def){
+      this.add(`**Primitiva obtenida:** F(x) = ${primSimp}`,`F(x) = ${primSimp} + C`,true);
+      return{steps:this.S,result:`${primSimp} + C`};
+    }
+
+    /* Definite integral — Barrow */
+    this.add(`**Regla de Barrow:** F(b) − F(a)  con la primitiva F(x) = ${primSimp}`,`∫[a→b] f(x) dx = F(b) − F(a)`);
+    const loN=parseFloat(lo), hiN=parseFloat(hi);
+    let Fb,Fa;
+    try{Fb=math.evaluate(primSimp,{x:hiN,e:Math.E,pi:Math.PI});}catch(e){throw new Error(`No se pudo evaluar F(${hi}): ${e.message}`);}
+    try{Fa=math.evaluate(primSimp,{x:loN,e:Math.E,pi:Math.PI});}catch(e){throw new Error(`No se pudo evaluar F(${lo}): ${e.message}`);}
+    this.add(`F(${hi}) = ${parseFloat(Fb.toFixed(8))}`,`F(${hi}) = ${parseFloat(Fb.toFixed(8))}`);
+    this.add(`F(${lo}) = ${parseFloat(Fa.toFixed(8))}`,`F(${lo}) = ${parseFloat(Fa.toFixed(8))}`);
+    const res=Fb-Fa;
+    const resStr=this.fmt(res);
+    this.add(`**F(${hi}) − F(${lo}) = ${resStr}**`,`Resultado = ${resStr}`,true);
+    return{steps:this.S,result:resStr};
+  }
+
+  /* Integrate a math.js node */
+  int(n){
+    if(!n) return '0';
+    if(n.type==='ParenthesisNode') return this.int(n.content);
+    const s=this.ns(n);
+
+    /* Constant */
+    if(this.isConst(n)){
+      const v=this.cval(n),vs=v!==null?this.fmt(v):s;
+      if(v===0) return '0';
+      if(v===1){this.add(`∫ 1 dx = x`,`∫ 1 dx = x`);return 'x';}
+      this.add(`Integral de la **constante ${vs}**`,`∫ ${vs} dx = ${vs}·x`);
+      return `(${vs})*x`;
+    }
+
+    /* x */
+    if(n.type==='SymbolNode'&&n.name==='x'){
+      this.add(`**Regla de la potencia** ∫ x dx = x²/2`,`∫ x¹ dx = x^(1+1)/(1+1) = x²/2`);
+      return `x^2/2`;
+    }
+
+    if(n.type==='OperatorNode') return this.intOp(n);
+    if(n.type==='FunctionNode') return this.intFn(n);
+
+    throw new Error(`No se puede integrar: ${s}`);
+  }
+
+  intOp(n){
+    const{op,args}=n,s=this.ns(n);
+
+    /* Unary minus */
+    if(op==='unaryMinus'||(op==='-'&&args.length===1)){
+      return `-(${this.int(args[0])})`;
+    }
+
+    /* Sum / Difference */
+    if(op==='+'||op==='-'){
+      this.add(`La función es una **suma/diferencia** → integramos cada término por separado`,`∫(f±g)dx = ∫f dx ± ∫g dx`);
+      const ia=this.int(args[0]),ib=this.int(args[1]);
+      return `(${ia}) ${op} (${ib})`;
+    }
+
+    /* Multiplication */
+    if(op==='*'){
+      const[a,b]=args;
+      if(this.isConst(a)){
+        const v=this.cval(a),vs=v!==null?this.fmt(v):this.ns(a);
+        this.add(`La constante **${vs}** sale fuera de la integral`,`∫ ${vs}·f(x) dx = ${vs}·∫ f(x) dx`);
+        return `(${vs})*(${this.int(b)})`;
+      }
+      if(this.isConst(b)){
+        const v=this.cval(b),vs=v!==null?this.fmt(v):this.ns(b);
+        this.add(`La constante **${vs}** sale fuera de la integral`,`∫ f(x)·${vs} dx = ${vs}·∫ f(x) dx`);
+        return `(${vs})*(${this.int(a)})`;
+      }
+      return this.byParts(a,b,s);
+    }
+
+    /* Division */
+    if(op==='/'){
+      const[num,den]=args;
+      const ns_=this.ns(num),ds=this.ns(den);
+
+      /* 1/x */
+      if(num.type==='ConstantNode'&&num.value===1&&den.type==='SymbolNode'&&den.name==='x'){
+        this.add(`Caso especial: ∫ 1/x dx = ln|x|`,`∫ x⁻¹ dx = ln|x| + C`);
+        return `ln(abs(x))`;
+      }
+      /* c/x */
+      if(this.isConst(num)&&den.type==='SymbolNode'&&den.name==='x'){
+        const cv=this.cval(num)||1,cs=this.fmt(cv);
+        this.add(`∫ ${cs}/x dx = ${cs}·ln|x|`,`∫ c/x dx = c·ln|x|`);
+        return `(${cs})*ln(abs(x))`;
+      }
+      /* c/(ax+b) */
+      const lin=this.linear(den);
+      if(this.isConst(num)&&lin&&lin.a!==0){
+        const cv=this.cval(num)||1,fac=this.fmt(cv/lin.a);
+        this.add(`Integral de tipo **c/(ax+b)** → sustitución u=${ds}`,`∫ c/(ax+b) dx = (c/a)·ln|ax+b| + C`);
+        return `(${fac})*ln(abs(${ds}))`;
+      }
+      /* 1/(x^2+a^2) */
+      if(num.type==='ConstantNode'&&num.value===1){
+        const xpa=this.xSqPlusK(den);
+        if(xpa!==null&&xpa>0){
+          const af=Math.sqrt(xpa),afs=this.fmt(af),fac=this.fmt(1/af);
+          this.add(`Integral de tipo **1/(x²+a²)** con a²=${xpa}`,`∫ 1/(x²+a²) dx = (1/a)·arctan(x/a) + C`);
+          return `(${fac})*atan(x/(${afs}))`;
+        }
+      }
+      /* x^(-n) rewrite */
+      if(den.type==='OperatorNode'&&den.op==='^'){
+        const[db,de]=den.args;
+        if(db.type==='SymbolNode'&&db.name==='x'&&this.isConst(de)){
+          const ev=this.cval(de);
+          if(ev!==null){
+            const cv=this.isConst(num)?(this.cval(num)||1):null;
+            if(cv!==null){
+              const newNode=math.parse(`${this.fmt(cv)}*x^(${-ev})`);
+              return this.int(newNode);
+            }
+          }
+        }
+      }
+      throw new Error(`No se puede integrar: ${s}. Intenta reescribir la expresión.`);
+    }
+
+    /* Power */
+    if(op==='^'){
+      const[base,exp_]=args;
+      const bs=this.ns(base),es=this.ns(exp_);
+
+      /* x^n */
+      if(base.type==='SymbolNode'&&base.name==='x'&&this.isConst(exp_)){
+        const nv=this.cval(exp_);
+        if(nv===null) throw new Error(`Exponente inválido`);
+        if(nv===-1){
+          this.add(`Caso especial: ∫ x⁻¹ dx = ln|x|`,`∫ 1/x dx = ln|x| + C`);
+          return `ln(abs(x))`;
+        }
+        const np1=nv+1,np1s=this.fmt(np1),nvs=this.fmt(nv);
+        this.add(`**Regla de la potencia** para x^${nvs}`,`∫ xⁿ dx = xⁿ⁺¹/(n+1)  →  ∫ x^${nvs} dx = x^${np1s}/${np1s}`);
+        return `x^(${np1})/(${np1})`;
+      }
+
+      /* e^x or e^u */
+      if(base.type==='SymbolNode'&&base.name==='e'){
+        return this.intEU(exp_);
+      }
+
+      /* (ax+b)^n */
+      if(this.isConst(exp_)){
+        const lin=this.linear(base),nv=this.cval(exp_);
+        if(lin&&lin.a!==0&&nv!==null&&nv!==-1){
+          if(!(lin.a===1&&lin.b===0)){
+            const np1=nv+1,fac=this.fmt(1/(lin.a*np1));
+            this.add(`**Regla de la potencia** sobre función lineal`,`∫ (${bs})^${this.fmt(nv)} dx = (${bs})^${this.fmt(np1)} · 1/(a·(n+1))`);
+            return `(${bs})^(${np1})*(${fac})`;
+          }
+        }
+        if(lin&&lin.a!==0&&nv===-1){
+          const fac=this.fmt(1/lin.a);
+          this.add(`∫ 1/(${bs}) dx = (1/a)·ln|${bs}|`);
+          return `(${fac})*ln(abs(${bs}))`;
+        }
+      }
+
+      /* a^x */
+      if(this.isConst(base)&&exp_.type==='SymbolNode'&&exp_.name==='x'){
+        const av=this.cval(base);
+        if(av&&av>0&&av!==1){
+          const lna=this.fmt(Math.log(av));
+          this.add(`∫ ${bs}^x dx = ${bs}^x / ln(${bs})`,`∫ aˣ dx = aˣ/ln(a)`);
+          return `(${bs})^x/ln(${bs})`;
+        }
+      }
+    }
+
+    throw new Error(`No se puede integrar: ${s}`);
+  }
+
+  /* e^u integration */
+  intEU(u){
+    const us=this.ns(u),lin=this.linear(u);
+    if(lin&&lin.a===1&&lin.b===0){
+      this.add(`∫ eˣ dx = eˣ  (primitiva es la propia función)`,`∫ eˣ dx = eˣ + C`);
+      return `e^x`;
+    }
+    if(lin&&lin.a!==0){
+      const fac=this.fmt(1/lin.a);
+      this.add(`**Sustitución** u = ${us}: ∫ eᵘ·(du/a)`,`∫ e^(ax+b) dx = (1/a)·e^(ax+b) + C`);
+      return `(${fac})*e^(${us})`;
+    }
+    throw new Error(`No se puede integrar e^(${us}) de forma elemental`);
+  }
+
+  /* x^2 + c pattern → returns c or null */
+  xSqPlusK(n){
+    if(n.type!=='OperatorNode'||n.op!=='+') return null;
+    const[a,b]=n.args;
+    const chk=(base,rest)=>base.type==='OperatorNode'&&base.op==='^'&&
+      base.args[0].type==='SymbolNode'&&base.args[0].name==='x'&&
+      base.args[1].type==='ConstantNode'&&base.args[1].value===2&&
+      this.isConst(rest)?this.cval(rest):null;
+    return chk(a,b)??chk(b,a);
+  }
+
+  intFn(n){
+    const fn=typeof n.fn==='string'?n.fn:n.fn.name;
+    const u=n.args[0],us=this.ns(u);
+    const lin=this.linear(u);
+    const isX=lin&&lin.a===1&&lin.b===0;
+    const fac=(lin&&lin.a!==0)?this.fmt(1/lin.a):null;
+
+    switch(fn){
+      case 'sin':
+        if(isX){this.add(`∫ sin(x) dx = −cos(x)`,`∫ sin(x) dx = -cos(x) + C`);return `-cos(x)`;}
+        if(lin&&lin.a!==0){this.add(`**Sustitución** u=${us}`,`∫ sin(ax+b) dx = -cos(ax+b)/a + C`);return `(${fac})*(-cos(${us}))`;}
+        throw new Error(`No se puede integrar sin(${us})`);
+      case 'cos':
+        if(isX){this.add(`∫ cos(x) dx = sin(x)`,`∫ cos(x) dx = sin(x) + C`);return `sin(x)`;}
+        if(lin&&lin.a!==0){this.add(`**Sustitución** u=${us}`,`∫ cos(ax+b) dx = sin(ax+b)/a + C`);return `(${fac})*sin(${us})`;}
+        throw new Error(`No se puede integrar cos(${us})`);
+      case 'tan':
+        if(isX){this.add(`∫ tan(x) dx = −ln|cos(x)|`,`∫ tan(x) dx = -ln|cos(x)| + C`);return `-ln(abs(cos(x)))`;}
+        if(lin&&lin.a!==0){this.add(`∫ tan(${us}) dx = −(1/a)·ln|cos(${us})|`);return `(${fac})*(-ln(abs(cos(${us}))))`;}
+        throw new Error(`No se puede integrar tan(${us})`);
+      case 'ln': case 'log':
+        if(isX){this.add(`∫ ln(x) dx = x·ln(x) − x  (**integración por partes**: u=ln x, dv=dx)`,`∫ ln(x) dx = x·ln(x) - x + C`);return `x*ln(x)-x`;}
+        throw new Error(`No se puede integrar ln(${us})`);
+      case 'sqrt':
+        if(isX){this.add(`∫ √x dx = (2/3)·x^(3/2)  (regla de la potencia con n=1/2)`,`∫ x^(1/2) dx = x^(3/2)/(3/2) = (2/3)x^(3/2) + C`);return `(2/3)*x^(3/2)`;}
+        if(lin&&lin.a!==0){const f=this.fmt(2/(3*lin.a));this.add(`∫ √(${us}) dx = (2/3a)·(${us})^(3/2)`);return `(${f})*(${us})^(3/2)`;}
+        throw new Error(`No se puede integrar sqrt(${us})`);
+      case 'exp':
+        return this.intEU(u);
+      case 'asin':
+        if(isX){this.add(`∫ arcsin(x) dx = x·arcsin(x)+√(1−x²)  (por partes)`);return `x*asin(x)+sqrt(1-x^2)`;}
+        throw new Error(`No se puede integrar arcsin(${us})`);
+      case 'acos':
+        if(isX){this.add(`∫ arccos(x) dx = x·arccos(x)−√(1−x²)  (por partes)`);return `x*acos(x)-sqrt(1-x^2)`;}
+        throw new Error(`No se puede integrar arccos(${us})`);
+      case 'atan':
+        if(isX){this.add(`∫ arctan(x) dx = x·arctan(x)−(1/2)·ln(1+x²)  (por partes)`);return `x*atan(x)-(1/2)*ln(1+x^2)`;}
+        throw new Error(`No se puede integrar arctan(${us})`);
+      case 'abs':
+        if(isX){this.add(`∫ |x| dx = x·|x|/2`);return `x*abs(x)/2`;}
+        throw new Error(`No se puede integrar abs(${us})`);
+    }
+    throw new Error(`Función ${fn}(${us}) no soportada`);
+  }
+
+  byParts(a,b,orig){
+    const as_=this.ns(a),bs=this.ns(b);
+    const isX_=n=>n.type==='SymbolNode'&&n.name==='x';
+    const isPoly=n=>{
+      if(isX_(n)) return true;
+      if(n.type==='OperatorNode'&&n.op==='^'&&isX_(n.args[0])&&this.isConst(n.args[1])) return true;
+      return false;
+    };
+    const isTrig=n=>n.type==='FunctionNode'&&['sin','cos'].includes(typeof n.fn==='string'?n.fn:n.fn.name);
+    const isExpN=n=>n.type==='OperatorNode'&&n.op==='^'&&n.args[0].type==='SymbolNode'&&n.args[0].name==='e';
+    const isLn=n=>n.type==='FunctionNode'&&['ln','log'].includes(typeof n.fn==='string'?n.fn:n.fn.name);
+
+    if(isPoly(a)&&isExpN(b)) return this.bpXExp(a,b);
+    if(isPoly(b)&&isExpN(a)) return this.bpXExp(b,a);
+    if(isPoly(a)&&isTrig(b)) return this.bpXTrig(a,b);
+    if(isPoly(b)&&isTrig(a)) return this.bpXTrig(b,a);
+    if(isPoly(a)&&isLn(b))   return this.bpLn(b,a);
+    if(isPoly(b)&&isLn(a))   return this.bpLn(a,b);
+    if(isTrig(a)&&isExpN(b)) return this.bpTrigExp(a,b);
+    if(isTrig(b)&&isExpN(a)) return this.bpTrigExp(b,a);
+    throw new Error(`No se puede integrar el producto: ${orig}. Prueba a escribirlo de otra forma.`);
+  }
+
+  bpXExp(poly,expN){
+    const ps=this.ns(poly),es=this.ns(expN);
+    const nv=poly.type==='OperatorNode'&&poly.op==='^'?(this.cval(poly.args[1])||1):1;
+    this.add(`**Integración por partes** — u·v pattern`,`∫u dv = u·v − ∫v du`);
+    this.add(`Elegimos **u = ${ps}** (algebraica) y **dv = ${es} dx** (exponencial)`);
+    const du=nv===1?'1':`${nv}*x^${this.fmt(nv-1)}`;
+    const v_=es;
+    this.add(`u = ${ps}  →  u' = ${du}`,`u' = ${du}`);
+    this.add(`dv = ${es} dx  →  v = ${es}  (∫eˣ=eˣ)`,`v = ${es}`);
+    if(nv===1){
+      this.add(`Aplicamos: ∫x·eˣ dx = x·eˣ − ∫eˣ dx = x·eˣ − eˣ = eˣ(x−1)`);
+      return `(x-1)*e^x`;
+    }
+    this.add(`Resultado: ${ps}·${es} − ∫${du}·${es} dx  (aplica por partes de nuevo si es necesario)`);
+    try{return `${ps}*${es}-(${this.int(math.parse(`(${du})*(${es})`))})`;} catch(e){throw new Error(`No se puede integrar ${ps}·${es}`);}
+  }
+
+  bpXTrig(poly,trig){
+    const fn=typeof trig.fn==='string'?trig.fn:trig.fn.name;
+    const ps=this.ns(poly),ts=this.ns(trig);
+    const uArg=trig.args[0],us=this.ns(uArg);
+    const lin=this.linear(uArg);
+    const nv=poly.type==='OperatorNode'&&poly.op==='^'?(this.cval(poly.args[1])||1):1;
+    this.add(`**Integración por partes**`,`∫u dv = u·v − ∫v du`);
+    this.add(`Elegimos **u = ${ps}** (algebraica) y **dv = ${ts} dx** (trigonométrica)`);
+    const du=nv===1?'1':`${nv}*x^${this.fmt(nv-1)}`;
+    const fac=(lin&&lin.a!==0)?this.fmt(1/lin.a):'1';
+    let v_;
+    if(fn==='sin'){v_=`(${fac})*(-cos(${us}))`;}
+    else{v_=`(${fac})*sin(${us})`;}
+    this.add(`u = ${ps}  →  u' = ${du}`,`u' = ${du}`);
+    this.add(`dv = ${ts} dx  →  v = ${v_}`,`v = ${v_}`);
+    if(nv===1){
+      let res;
+      if(fn==='sin'){
+        res=lin&&lin.a!==0&&lin.a!==1
+          ?`(${fac})*(-x*cos(${us})) + (${this.fmt(1/(lin.a*lin.a))})*sin(${us})`
+          :`-x*cos(${us})+sin(${us})`;
+      } else {
+        res=lin&&lin.a!==0&&lin.a!==1
+          ?`(${fac})*(x*sin(${us})) + (${this.fmt(1/(lin.a*lin.a))})*cos(${us})`
+          :`x*sin(${us})+cos(${us})`;
+      }
+      this.add(`∫x·${ts} dx = x·(${v_}) − ∫(${v_})·1 dx`);
+      return res;
+    }
+    try{return `${ps}*(${v_})-(${this.int(math.parse(`(${du})*(${v_})`))})`;} catch(e){throw new Error(`No se puede integrar ${ps}·${ts}`);}
+  }
+
+  bpLn(lnN,poly){
+    const ps=this.ns(poly),ls=this.ns(lnN);
+    const nv=poly.type==='OperatorNode'&&poly.op==='^'?(this.cval(poly.args[1])||1):1;
+    this.add(`**Integración por partes** — __regla LIATE__: logarítmica va como u`,`∫u dv = u·v − ∫v du`);
+    this.add(`Elegimos **u = ${ls}** (logarítmica) y **dv = ${ps} dx** (algebraica)`);
+    const vn=nv+1,vs=this.fmt(vn);
+    this.add(`u = ${ls}  →  u' = 1/x`,`u' = 1/x`);
+    this.add(`dv = x^${this.fmt(nv)} dx  →  v = x^${vs}/${vs}`,`v = x^${vs}/${vs}`);
+    const coef=this.fmt(1/(vn*vn));
+    const res=`(x^${vs}/(${vs}))*ln(x)-(${coef})*x^${vs}`;
+    this.add(`Calculamos: ∫(x^${vs}/${vs})·(1/x) dx = ∫ x^${this.fmt(nv)}/${vs} dx = (${coef})·x^${vs}`);
+    return res;
+  }
+
+  bpTrigExp(trig,expN){
+    const fn=typeof trig.fn==='string'?trig.fn:trig.fn.name;
+    this.add(`**Integración por partes recursiva** (trig × exp)`,`Se aplica por partes dos veces y se despeja la integral del lado izquierdo`);
+    if(fn==='sin'){
+      this.add(`∫ eˣ·sin(x) dx: aplicamos por partes dos veces y despejamos`,`Resultado: eˣ·(sin x − cos x)/2`);
+      return `(e^x*(sin(x)-cos(x)))/2`;
+    }
+    if(fn==='cos'){
+      this.add(`∫ eˣ·cos(x) dx: aplicamos por partes dos veces y despejamos`,`Resultado: eˣ·(sin x + cos x)/2`);
+      return `(e^x*(sin(x)+cos(x)))/2`;
+    }
+    throw new Error(`No se puede integrar ${this.ns(trig)}·${this.ns(expN)}`);
+  }
+}
+
+/* ══════════════════════════════════════════════════
+   DERIVATIVE ENGINE
+══════════════════════════════════════════════════ */
+class DiffEng{
+  constructor(){this.S=[];}
+  add(t,f=null,sp=false){this.S.push({t,f,sp});}
+  ns(n){try{return n.toString();}catch(e){return '?';}}
+  isK(n){
+    if(!n)return false;
+    if(n.type==='ConstantNode')return true;
+    if(n.type==='SymbolNode')return n.name!=='x';
+    if(n.type==='OperatorNode')return n.args.every(a=>this.isK(a));
+    return false;
+  }
+  cval(n){if(!n)return null;if(n.type==='ConstantNode')return n.value;try{return math.evaluate(n.toString());}catch(e){return null;}}
+
+  solve(ex){
+    this.S=[];
+    let nd;
+    try{nd=math.parse(ex);}catch(e){throw new Error('Expresión inválida. Revisa la sintaxis.');}
+    this.add(`Calculamos **f'(x)** donde f(x) = ${ex}`);
+    const r=this.d(nd);
+    let s=r;
+    try{s=math.simplify(r,{},{exactFractions:false}).toString();}catch(e){}
+    this.add(`**Resultado:** f'(x) = ${s}`,`f'(x) = ${s}`,true);
+    return{steps:this.S,result:s};
+  }
+
+  d(n){
+    if(!n)return '0';
+    if(n.type==='ParenthesisNode')return this.d(n.content);
+    if(n.type==='ConstantNode')return '0';
+    if(n.type==='SymbolNode')return n.name==='x'?'1':'0';
+    if(n.type==='OperatorNode')return this.dOp(n);
+    if(n.type==='FunctionNode')return this.dFn(n);
+    return '0';
+  }
+
+  dOp(n){
+    const{op,args}=n;
+    const a=args[0],b=args[1],as=this.ns(a),bs=b?this.ns(b):'';
+    if(op==='unaryMinus'||(!b&&op==='-'))return `-(${this.d(a)})`;
+    if(op==='+'||op==='-'){
+      this.add(`**Suma/diferencia** → derivar término a término`,`(f${op}g)' = f'${op}g'`);
+      return `(${this.d(a)})${op}(${this.d(b)})`;
+    }
+    if(op==='*'){
+      if(this.isK(a)){const v=this.cval(a),vs=v!==null?String(v):as;this.add(`Constante **${vs}** sale fuera`,`(c·f)' = c·f'`);return `(${vs})*(${this.d(b)})`;}
+      if(this.isK(b)){const v=this.cval(b),vs=v!==null?String(v):bs;this.add(`Constante **${vs}** sale fuera`);return `(${vs})*(${this.d(a)})`;}
+      this.add(`**Regla del producto** u=${as}, v=${bs}`,`(u·v)' = u'·v + u·v'`);
+      const da=this.d(a),db=this.d(b);
+      this.add(`u'=(${as})'=${da}  |  v'=(${bs})'=${db}`);
+      return `(${da})*(${bs})+(${as})*(${db})`;
+    }
+    if(op==='/'){
+      if(this.isK(a)){const db=this.d(b);this.add(`Constante sobre función`,`(c/v)' = -c·v'/v²`);return `(-(${as})*(${db}))/(${bs})^2`;}
+      this.add(`**Regla del cociente** u=${as}, v=${bs}`,`(u/v)' = (u'·v − u·v') / v²`);
+      const da=this.d(a),db=this.d(b);
+      this.add(`u'=${da}  |  v'=${db}`);
+      return `((${da})*(${bs})-(${as})*(${db}))/(${bs})^2`;
+    }
+    if(op==='^'){
+      const[base,exp_]=args;
+      const bss=this.ns(base),ess=this.ns(exp_);
+      /* x^n */
+      if(base.type==='SymbolNode'&&base.name==='x'&&this.isK(exp_)){
+        const nv=this.cval(exp_);
+        if(nv===null)throw new Error('Exponente inválido');
+        const nvs=String(nv),n1s=String(nv-1);
+        this.add(`**Regla de la potencia** para x^${nvs}`,`(xⁿ)' = n·xⁿ⁻¹  →  (x^${nvs})' = ${nv}·x^${n1s}`);
+        if(nv===2)return `2*x`;
+        if(nv===1)return `1`;
+        if(nv-1===0)return `${nv}`;
+        return `${nv}*x^${nv-1}`;
+      }
+      /* e^u */
+      if(base.type==='SymbolNode'&&base.name==='e'){
+        const xOnly=exp_.type==='SymbolNode'&&exp_.name==='x';
+        if(xOnly){this.add(`(eˣ)' = eˣ`,`d/dx[eˣ] = eˣ`);return `e^x`;}
+        this.add(`**Regla de la cadena** d/dx[e^u] = e^u·u'`,`d/dx[eᵘ] = eᵘ·u'`);
+        const du=this.d(exp_);
+        this.add(`u'=(${ess})'=${du}`);
+        return `e^(${ess})*(${du})`;
+      }
+      /* a^x */
+      if(this.isK(base)&&!this.isK(exp_)){
+        if(exp_.type==='SymbolNode'&&exp_.name==='x'){this.add(`d/dx[${bss}^x] = ${bss}^x·ln(${bss})`);return `(${bss})^x*ln(${bss})`;}
+        const du=this.d(exp_);
+        return `(${bss})^(${ess})*ln(${bss})*(${du})`;
+      }
+      /* f(x)^n */
+      if(this.isK(exp_)){
+        const nv=this.cval(exp_);
+        if(nv===null)throw new Error('Exponente inválido');
+        this.add(`**(f(x))^${nv}** → __regla de la cadena__ + potencia`,`d/dx[(f)ⁿ] = n·fⁿ⁻¹·f'  f=${bss}`);
+        const df=this.d(base);
+        this.add(`f'=(${bss})'=${df}`);
+        return `${nv}*(${bss})^${nv-1}*(${df})`;
+      }
+      /* General */
+      this.add(`Potencia variable → __diferenciación logarítmica__`,`(f^g)' = f^g·(g'·ln f + g·f'/f)`);
+      const df=this.d(base),dg=this.d(exp_);
+      return `(${bss})^(${ess})*((${dg})*ln(${bss})+(${ess})*(${df})/(${bss}))`;
+    }
+    return '0';
+  }
+
+  dFn(n){
+    const fn=typeof n.fn==='string'?n.fn:n.fn.name;
+    const u=n.args[0],us=this.ns(u);
+    const xOnly=u.type==='SymbolNode'&&u.name==='x';
+    const cn=xOnly?'':`  (→ __regla de la cadena__)`;
+    let out;
+    switch(fn){
+      case 'sin':this.add(`d/dx[sin(${us})] = cos(${us})·u'${cn}`,`d/dx[sin(u)]=cos(u)·u'`);out=`cos(${us})`;break;
+      case 'cos':this.add(`d/dx[cos(${us})] = −sin(${us})·u'${cn}`,`d/dx[cos(u)]=-sin(u)·u'`);out=`-sin(${us})`;break;
+      case 'tan':this.add(`d/dx[tan(${us})] = 1/cos²(${us})·u'${cn}`,`d/dx[tan(u)]=u'/cos²(u)`);out=`1/(cos(${us}))^2`;break;
+      case 'asin':this.add(`d/dx[arcsin(${us})] = u'/√(1−u²)${cn}`);out=`1/sqrt(1-(${us})^2)`;break;
+      case 'acos':this.add(`d/dx[arccos(${us})] = −u'/√(1−u²)${cn}`);out=`-1/sqrt(1-(${us})^2)`;break;
+      case 'atan':this.add(`d/dx[arctan(${us})] = u'/(1+u²)${cn}`);out=`1/(1+(${us})^2)`;break;
+      case 'ln':case 'log':this.add(`d/dx[ln(${us})] = u'/u${cn}`,`d/dx[ln(u)]=u'/u`);out=`1/(${us})`;break;
+      case 'log10':this.add(`d/dx[log₁₀(${us})] = u'/(u·ln 10)${cn}`);out=`1/((${us})*log(10))`;break;
+      case 'sqrt':this.add(`d/dx[√(${us})] = u'/(2√u)${cn}`,`d/dx[√u]=u'/(2√u)`);out=`1/(2*sqrt(${us}))`;break;
+      case 'exp':this.add(`d/dx[exp(${us})] = exp(${us})·u'${cn}`);out=`exp(${us})`;break;
+      case 'abs':this.add(`d/dx[|${us}|] = sign(${us})·u'`);out=`(${us})/abs(${us})`;break;
+      default:this.add(`Derivada de ${fn}(${us})`);return '0';
+    }
+    if(xOnly) return out;
+    const du=this.d(u);
+    this.add(`Función interior u=${us}: u'=${du}`);
+    return `(${out})*(${du})`;
+  }
+}
+
+/* ══════════════════════════════════════════════════
+   LIMIT ENGINE
+══════════════════════════════════════════════════ */
+class LimEng{
+  constructor(){this.S=[];}
+  add(t,f=null,sp=false){this.S.push({t,f,sp});}
+  ev(ex,x){try{return math.evaluate(ex,{x,e:Math.E,pi:Math.PI});}catch(e){return NaN;}}
+
+  solve(ex,pt,ty){
+    this.S=[];
+    const infP=pt==='Infinity'||pt==='+Infinity'||pt==='∞';
+    const infN=pt==='-Infinity'||pt==='-∞';
+    const inf=infP||infN;
+    const pd=infP?'+∞':infN?'−∞':pt;
+    const td=ty==='r'?`x→${pd}⁺`:ty==='l'?`x→${pd}⁻`:`x→${pd}`;
+    this.add(`Calculamos **lim[${td}] (${ex})**`);
+    if(inf){this.doInf(ex,infP);}
+    else{
+      const p=parseFloat(pt);
+      if(isNaN(p))throw new Error('Punto inválido. Usa un número, Infinity o -Infinity.');
+      this.doFin(ex,p,ty,pd);
+    }
+    return{steps:this.S};
+  }
+
+  doFin(ex,p,ty,pd){
+    this.add(`**Paso 1 — Sustitución directa** x = ${pd}`);
+    const eps=ty==='r'?1e-9:ty==='l'?-1e-9:0;
+    const v=this.ev(ex,p+eps);
+    if(!isNaN(v)&&isFinite(v)){
+      const r=String(parseFloat(v.toFixed(10)));
+      this.add(`Sustituyendo x=${pd}: f(${pd}) = **${r}**`,`f(${pd}) = ${r}`);
+      this.add(`Función continua en x=${pd} → el límite existe`,null);
+      this.add(`**lim = ${r}**`,`lim[${td||pd}] = ${r}`,true);
+      return;
+    }
+    const fr=this.splitFrac(ex);
+    if(fr){
+      const nv=this.ev(fr.n,p),dv=this.ev(fr.d,p);
+      const nz=Math.abs(nv)<1e-9||isNaN(nv),dz=Math.abs(dv)<1e-9||isNaN(dv);
+      if(nz&&dz){
+        this.add(`Obtenemos la indeterminación **0/0**`,`N(${pd})→0  y  D(${pd})→0`);
+        this.doLH(fr,p,pd,ex);
+        return;
+      }
+      if(dz&&!nz){
+        const sg=nv>0?'+':'−';
+        this.add(`Denominador→0 y numerador→${String(parseFloat(nv.toFixed(4)))} ≠ 0 → **límite = ${sg}∞**`);
+        this.add(`**lim = ${sg}∞**`,null,true);
+        return;
+      }
+    }
+    const num=this.numLim(ex,p,ty);
+    if(num!==null){this.add(`Evaluación numérica`);this.add(`**lim ≈ ${num}**`,null,true);}
+    else this.add(`No se pudo determinar el límite. Revisa la expresión.`);
+  }
+
+  doLH(fr,p,pd,orig){
+    this.add(`Aplicamos la **Regla de L'Hôpital** (indeterminación 0/0 → derivar numerador y denominador)`,`L'Hôpital: lim[f/g] = lim[f'/g']`);
+    try{
+      const dn=math.derivative(fr.n,'x').toString();
+      const dd=math.derivative(fr.d,'x').toString();
+      this.add(`Derivamos el numerador: (${fr.n})' = ${dn}`,`N'(x) = ${dn}`);
+      this.add(`Derivamos el denominador: (${fr.d})' = ${dd}`,`D'(x) = ${dd}`);
+      const v2=this.ev(`(${dn})/(${dd})`,p);
+      if(!isNaN(v2)&&isFinite(v2)){
+        const r=String(parseFloat(v2.toFixed(10)));
+        this.add(`Evaluando N'(${pd})/D'(${pd}) = **${r}**`);
+        this.add(`**lim = ${r}**`,`lim[${pd}] ${orig} = ${r}`,true);
+      } else if(!isNaN(v2)){
+        const s=v2>0?'+∞':'−∞';
+        this.add(`El cociente de derivadas diverge → **lim = ${s}**`,null,true);
+      } else {
+        this.add(`L'Hôpital da otra indeterminación → intentamos **factorizar** (x−${pd})`);
+        const nl=this.numLim(orig,p,'b');
+        if(nl)this.add(`**lim ≈ ${nl}** (numérico)`,null,true);
+      }
+    }catch(e){
+      const nl=this.numLim(orig,p,'b');
+      if(nl)this.add(`**lim ≈ ${nl}** (numérico)`,null,true);
+    }
+  }
+
+  doInf(ex,pos){
+    const d=pos?'+∞':'−∞';
+    this.add(`Analizamos el comportamiento cuando **x → ${d}**`);
+    const fr=this.splitFrac(ex);
+    if(fr){
+      this.add(`Función racional → comparamos los **grados** del numerador y denominador`,
+        `• grad N < grad D  →  lim = 0\n• grad N = grad D  →  lim = coef. principal N / coef. principal D\n• grad N > grad D  →  lim = ±∞`);
+      this.add(`Dividimos numerador y denominador por la **mayor potencia de x** del denominador`);
+    }
+    const xb=pos?1e12:-1e12,v=this.ev(ex,xb);
+    if(!isNaN(v)&&isFinite(v)){const r=String(parseFloat(v.toFixed(8)));this.add(`**lim = ${r}**`,`lim[${d}] = ${r}`,true);}
+    else if(!isNaN(v)){const s=v>0?'+∞':'−∞';this.add(`La función diverge`);this.add(`**lim = ${s}**`,null,true);}
+    else this.add(`Límite requiere análisis adicional.`);
+  }
+
+  splitFrac(ex){
+    let d=0,pos=-1;
+    for(let i=0;i<ex.length;i++){
+      const c=ex[i];
+      if(c==='('||c==='[')d++;
+      if(c===')'||c===']')d--;
+      if(c==='/'&&d===0){pos=i;break;}
+    }
+    if(pos===-1)return null;
+    return{n:ex.slice(0,pos).trim(),d:ex.slice(pos+1).trim()};
+  }
+
+  numLim(ex,p,ty){
+    try{
+      const eps=[1e-6,1e-7,1e-8];
+      const dirs=ty==='r'?[1]:ty==='l'?[-1]:[1,-1];
+      const vs=[];
+      for(const e of eps)for(const d of dirs){const v=this.ev(ex,p+d*e);if(!isNaN(v)&&isFinite(v))vs.push(v);}
+      if(!vs.length)return null;
+      const avg=vs.reduce((a,b)=>a+b,0)/vs.length;
+      return String(parseFloat(avg.toFixed(6)));
+    }catch(e){return null;}
+  }
+}
+
+/* ══════════════════════════════════════════════════
+   MAIN
+══════════════════════════════════════════════════ */
+function go(){
+  const ex=document.getElementById('expr').value.trim();
+  if(!ex){document.getElementById('expr').focus();return;}
+  clr();
+  document.getElementById('sbtn').disabled=true;
+  const T={integral:'Integral — Paso a paso',derivada:'Derivada — Paso a paso',limite:'Límite — Paso a paso'};
+  document.getElementById('rtit').textContent=T[COP];
+
+  setTimeout(()=>{
+    try{
+      let html='';
+      if(COP==='derivada'){
+        const out=new DiffEng().solve(ex);
+        html=secHTML('📐 Derivación paso a paso')+stepsHTML(out.steps)+finalHTML(`f'(x) = ${out.result}`);
+      } else if(COP==='integral'){
+        const lo=document.getElementById('lo').value.trim();
+        const hi=document.getElementById('hi').value.trim();
+        const out=new SymInt().solve(ex,lo,hi);
+        const lbl=(lo&&hi)?`∫[${lo}→${hi}] = ${out.result}`:out.result;
+        html=secHTML('∫ Integración paso a paso')+stepsHTML(out.steps)+finalHTML(lbl);
+      } else {
+        const pt=document.getElementById('lpt').value.trim()||'0';
+        const ty=document.getElementById('lty').value;
+        const out=new LimEng().solve(ex,pt,ty);
+        html=secHTML('📊 Cálculo del límite')+stepsHTML(out.steps);
+      }
+      document.getElementById('rb').innerHTML=html;
+      document.getElementById('rc').classList.add('on');
+      document.getElementById('rc').scrollIntoView({behavior:'smooth',block:'nearest'});
+    }catch(e){
+      showErr(e.message||'Error desconocido. Revisa la sintaxis.');
+    }finally{
+      document.getElementById('sbtn').disabled=false;
+    }
+  },20);
+}
+
+/* Init */
+selOp('integral',document.querySelector('[data-op="integral"]'));
+</script>
+</body>
+</html>
